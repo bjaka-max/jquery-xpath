@@ -1,5 +1,5 @@
 /*
- * jQuery XPath plugin v0.2.5
+ * jQuery XPath plugin v0.2.6
  * https://github.com/ilinsky/jquery-xpath
  * Copyright 2013, Sergey Ilinsky
  * Dual licensed under the MIT and GPL licenses.
@@ -29,7 +29,10 @@ var cString		= window.String,
 	fIsFinite	= window.isFinite,
 	nNaN		= window.NaN,
 	nInfinity	= window.Infinity,
-		fString_trim	=(function() {
+		fWindow_btoa	= window.btoa,
+	fWindow_atob	= window.atob,
+	fWindow_parseInt= window.parseInt,
+	fString_trim	=(function() {
 		return cString.prototype.trim ? function(sValue) {return cString(sValue).trim();} : function(sValue) {
 			return cString(sValue).replace(/^\s+|\s+$/g, '');
 		};
@@ -2931,7 +2934,7 @@ function cXSAnyType() {
 
 };
 
-cXSAnySimpleType.prototype.builtInKind	= cXSConstants.ANYTYPE_DT;
+cXSAnyType.prototype.builtInKind	= cXSConstants.ANYTYPE_DT;
 
 
 function cXSAnySimpleType() {
@@ -3035,8 +3038,13 @@ cXSBase64Binary.cast	= function(vValue) {
 			return new cXSBase64Binary(aMatch[0]);
 		throw new cException("FORG0001");
 	}
-	if (vValue instanceof cXSHexBinary)
-		throw "Casting from 'xs:" + "hexBinary"+ "' to 'xs:" + "base64Binary"+ "' not implemented";
+	if (vValue instanceof cXSHexBinary) {
+		var aMatch	= vValue.valueOf().match(/.{2}/g),
+			aValue	= [];
+		for (var nIndex = 0, nLength = aMatch.length; nIndex < nLength; nIndex++)
+			aValue.push(cString.fromCharCode(fWindow_parseInt(aMatch[nIndex], 16)));
+		return new cXSBase64Binary(fWindow_btoa(aValue.join('')));
+	}
 		throw new cException("XPTY0004"
 			, "Casting value '" + vValue + "' to xs:hexBinary can never succeed"
 	);
@@ -3258,7 +3266,7 @@ cXSDateTime.cast	= function(vValue) {
 };
 
 function fXSDateTime_pad(vValue, nLength) {
-	sValue	= cString(vValue);
+	var sValue	= cString(vValue);
 	if (arguments.length < 2)
 		nLength	= 2;
 	return (sValue.length < nLength + 1 ? new cArray(nLength + 1 - sValue.length).join('0') : '') + sValue;
@@ -3742,8 +3750,15 @@ cXSHexBinary.cast	= function(vValue) {
 			return new cXSHexBinary(aMatch[0].toUpperCase());
 		throw new cException("FORG0001");
 	}
-	if (vValue instanceof cXSBase64Binary)
-		throw "Casting from 'xs:" + "base64Binary"+ "' to 'xs:" + "hexBinary"+ "' not implemented";
+	if (vValue instanceof cXSBase64Binary) {
+		var sValue	= fWindow_atob(vValue.valueOf()),
+			aValue	= [];
+		for (var nIndex = 0, nLength = sValue.length, sLetter; nIndex < nLength; nIndex++) {
+			sLetter = sValue.charCodeAt(nIndex).toString(16);
+			aValue.push(new cArray(3 - sLetter.length).join('0') + sLetter);
+		}
+		return new cXSHexBinary(aValue.join(''));
+	}
 		throw new cException("XPTY0004"
 			, "Casting value '" + vValue + "' to xs:hexBinary can never succeed"
 	);
@@ -4643,9 +4658,10 @@ function fOperator_addYearMonthDuration2DateTime(oLeft, oRight, sOperator) {
 function fOperator_addDayTimeDuration2DateTime(oLeft, oRight, sOperator) {
 	var oValue;
 	if (oLeft instanceof cXSDate) {
+		var nValue	= (oRight.hours * 60 + oRight.minutes) * 60 + oRight.seconds;
 		oValue	= new cXSDate(oLeft.year, oLeft.month, oLeft.day, oLeft.timezone, oLeft.negative);
-		oValue.day	= oValue.day + oRight.day * (sOperator == '-' ?-1 : 1);
-		fXSDate_normalize(oValue);
+		oValue.day	= oValue.day + oRight.day * (sOperator == '-' ?-1 : 1) - 1 * (nValue && sOperator == '-');
+				fXSDate_normalize(oValue);
 	}
 	else
 	if (oLeft instanceof cXSDateTime) {
@@ -4654,7 +4670,7 @@ function fOperator_addDayTimeDuration2DateTime(oLeft, oRight, sOperator) {
 		oValue.minutes	= oValue.minutes + oRight.minutes * (sOperator == '-' ?-1 : 1);
 		oValue.hours	= oValue.hours + oRight.hours * (sOperator == '-' ?-1 : 1);
 		oValue.day		= oValue.day + oRight.day * (sOperator == '-' ?-1 : 1);
-		fXSDateTime_normalize(oValue);
+				fXSDateTime_normalize(oValue);
 	}
 	return oValue;
 };
@@ -6336,16 +6352,51 @@ function fXPath_evaluate(oQuery, sExpression, fNSResolver) {
 
 	return oSequence;
 };
+function getElementXPath(oQuery) {
+	var element = oQuery.get(0);
+    if (element && element.id)
+        return '    else
+        return this.getElementTreeXPath(element);
+};
+
+function getElementTreeXPath(element) {
+    var paths = [];
+
+        for (; element && element.nodeType == 1; element = element.parentNode)
+    {
+        var index = 0;
+        for (var sibling = element.previousSibling; sibling; sibling = sibling.previousSibling)
+        {
+                        if (sibling.nodeType == Node.DOCUMENT_TYPE_NODE)
+                continue;
+
+            if (sibling.nodeName == element.nodeName)
+                ++index;
+        }
+
+        var tagName = element.nodeName.toLowerCase();
+        var pathIndex = (index ? "[" + (index+1) + "]" : "");
+        paths.splice(0, 0, tagName + pathIndex);
+    }
+
+    return paths.length ? "/" + paths.join("/") : null;
+};
 
 var oObject	= {};
 oObject.xpath	= function(oQuery, sExpression, fNSResolver) {
 	return fXPath_evaluate(oQuery instanceof cQuery ? oQuery : new cQuery(oQuery), sExpression, fNSResolver);
+};
+oObject.getXpath = function(oQuery) {
+	return getElementXPath(oQuery instanceof cQuery ? oQuery : new cQuery(oQuery));
 };
 cQuery.extend(cQuery, oObject);
 
 oObject	= {};
 oObject.xpath	= function(sExpression, fNSResolver) {
 	return fXPath_evaluate(this, sExpression, fNSResolver);
+};
+oObject.getXpath = function() {
+	return getElementXPath(this);
 };
 cQuery.extend(cQuery.prototype, oObject);
 

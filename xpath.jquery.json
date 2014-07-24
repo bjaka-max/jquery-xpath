@@ -6,32 +6,36 @@
         "xpath",
         "xpath2"
     ],
-    "version": "0.2.5",
+    "version": "0.2.6",
     "author": {
-        "name": "Sergey Ilinsky",
-        "url": "https://github.com/ilinsky/jquery-xpath/blob/0.2.5/AUTHORS.txt"
+        "name": "Maxim Pashkov",
+        "url": "https://github.com/bjaka-max/jquery-xpath/blob/0.2.5/AUTHORS.txt"
     },
     "maintainers": [
         {
             "name": "Sergey Ilinsky",
             "email": "sergey@ilinsky.com",
             "url": "http://www.ilinsky.com"
+        }, {
+            "name":     "Maxim Pashkov",
+            "email":    "maxim@pashkovy.ru",
+            "url":      "http://www.pashkovy.ru"
         }
     ],
     "licenses": [
         {
             "type": "MIT",
-            "url": "https://github.com/ilinsky/jquery-xpath/blob/0.2.5/res/license/MIT-LICENSE.txt"
+            "url": "https://github.com/bjaka-max/jquery-xpath/blob/0.2.5/res/license/MIT-LICENSE.txt"
         },
         {
             "type": "GPLv2",
-            "url": "https://github.com/ilinsky/jquery-xpath/blob/0.2.5/res/license/GPL-LICENSE.txt"
+            "url": "https://github.com/bjaka-max/jquery-xpath/blob/0.2.5/res/license/GPL-LICENSE.txt"
         }
     ],
-    "bugs": "https://github.com/ilinsky/jquery-xpath/issues",
-    "homepage": "https://github.com/ilinsky/jquery-xpath",
-    "docs": "https://github.com/ilinsky/jquery-xpath",
-    "download": "https://github.com/ilinsky/jquery-xpath",
+    "bugs": "https://github.com/bjaka-max/jquery-xpath/issues",
+    "homepage": "https://github.com/bjaka-max/jquery-xpath",
+    "docs": "https://github.com/bjaka-max/jquery-xpath",
+    "download": "https://github.com/bjaka-max/jquery-xpath",
     "dependencies": {
         "jquery": ">=1.0"
     }
